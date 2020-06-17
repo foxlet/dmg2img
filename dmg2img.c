@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	char reserved[5] = "    ";
 	char sztype[64] = "";
 	unsigned int block_type, dw_reserved;
-    unsigned int should_free_output_file = 0;
+	unsigned int should_free_output_file = 0;
 
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-s"))
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 	if (!output_file) {
 		i = strlen(input_file);
 		output_file = (char *)malloc(i + 6);
-        should_free_output_file = 1;
+		should_free_output_file = 1;
 		if (output_file) {
 			strcpy(output_file, input_file);
 			if (i < 4 || strcasecmp(&output_file[i - 4], ".dmg"))
@@ -165,8 +165,8 @@ int main(int argc, char *argv[])
 	FIN = fopen(input_file, "rb");
 	if (FIN == NULL) {
 		printf("ERROR: Can't open input file %s\n", input_file);
-        if (should_free_output_file)
-            free(output_file);
+		if (should_free_output_file)
+			free(output_file);
 		return 1;
 	}
 
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
 	if (listparts || extractpart > partnum-1) {
 		if (extractpart > partnum-1)
 			printf("partition %d not found\n", extractpart);
-        goto cleanup;
+		goto cleanup;
 	}
 
 	if (output_file)
@@ -348,7 +348,7 @@ int main(int argc, char *argv[])
 		FOUT = NULL;
 	if (FOUT == NULL) {
 		printf("ERROR: Can't create output file %s\n", output_file);
-        goto cleanup;
+		goto cleanup;
 	}
 		
 	if (verbose)
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
 					printf("zlib inflate (in_addr=%llu in_size=%llu out_addr=%llu out_size=%llu)\n", (unsigned long long)in_offs, (unsigned long long)in_size, (unsigned long long)out_offs, (unsigned long long)out_size);
 				if (inflateInit(&z) != Z_OK) {
 					printf("ERROR: Can't initialize inflate stream\n");
-                    goto cleanup;
+					goto cleanup;
 				}
 				fseeko(FIN, in_offs + add_offs, SEEK_SET);
 				to_read = in_size;
@@ -459,7 +459,7 @@ int main(int argc, char *argv[])
 					if (ferror(FIN)) {
 						(void)inflateEnd(&z);
 						printf("ERROR: reading file %s \n", input_file);
-                        goto cleanup;
+						goto cleanup;
 					}
 					if (z.avail_in == 0)
 						break;
@@ -649,8 +649,8 @@ cleanup:
 		print_mountcmd(output_file);
 #endif
 
-    if (should_free_output_file)
-        free(output_file);
+	if (should_free_output_file)
+		free(output_file);
 
 	return 0;
 }
