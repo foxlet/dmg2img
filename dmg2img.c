@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
 	char reserved[5] = "    ";
 	char sztype[64] = "";
 	unsigned int block_type, dw_reserved;
+    unsigned int should_free_output_file = 0;
 
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-s"))
@@ -143,6 +144,7 @@ int main(int argc, char *argv[])
 	if (!output_file) {
 		i = strlen(input_file);
 		output_file = (char *)malloc(i + 6);
+        should_free_output_file = 1;
 		if (output_file) {
 			strcpy(output_file, input_file);
 			if (i < 4 || strcasecmp(&output_file[i - 4], ".dmg"))
@@ -163,6 +165,8 @@ int main(int argc, char *argv[])
 	FIN = fopen(input_file, "rb");
 	if (FIN == NULL) {
 		printf("ERROR: Can't open input file %s\n", input_file);
+        if (should_free_output_file)
+            free(output_file);
 		return 1;
 	}
 
@@ -266,7 +270,7 @@ int main(int argc, char *argv[])
 			if (verbose >= 3)
 				printf("%s\n", base64data);
 			cleanup_base64(base64data, data_size);
-			decode_base64(base64data, strlen(base64data), base64data, &tmplen);
+			decode_base64(base64data, strlen(base64data), &base64data, &tmplen);
 			fill_mishblk(base64data, &parts[i]);
 			if (parts[i].BlocksSignature != 0x6D697368) {
 				if (verbose >= 3)
@@ -335,18 +339,7 @@ int main(int argc, char *argv[])
 	if (listparts || extractpart > partnum-1) {
 		if (extractpart > partnum-1)
 			printf("partition %d not found\n", extractpart);
-		
-		for (i = 0; i < partnum; i++)
-			if (parts[i].Data != NULL)
-				free(parts[i].Data);
-		if (parts != NULL)
-			free(parts);
-		if (plist != NULL)
-			free(plist);
-		if (blkx != NULL)
-			free(blkx);
-		
-		return 0;
+        goto cleanup;
 	}
 
 	if (output_file)
@@ -355,8 +348,7 @@ int main(int argc, char *argv[])
 		FOUT = NULL;
 	if (FOUT == NULL) {
 		printf("ERROR: Can't create output file %s\n", output_file);
-		fclose(FIN);
-		return 1;
+        goto cleanup;
 	}
 		
 	if (verbose)
@@ -374,7 +366,7 @@ int main(int argc, char *argv[])
 	bz.bzfree = NULL;
 	bz.opaque = NULL;
 
-	in_offs = add_offs = in_offs_add = kolyblk.DataForkOffset;
+	in_offs = in_offs_add = kolyblk.DataForkOffset;
 
 	for (i = extractpart==-1?0:extractpart; i < (extractpart==-1?partnum:extractpart+1) && in_offs <= kolyblk.DataForkLength - kolyblk.DataForkOffset; i++) {
 		if (verbose)
@@ -452,7 +444,7 @@ int main(int argc, char *argv[])
 					printf("zlib inflate (in_addr=%llu in_size=%llu out_addr=%llu out_size=%llu)\n", (unsigned long long)in_offs, (unsigned long long)in_size, (unsigned long long)out_offs, (unsigned long long)out_size);
 				if (inflateInit(&z) != Z_OK) {
 					printf("ERROR: Can't initialize inflate stream\n");
-					return 1;
+                    goto cleanup;
 				}
 				fseeko(FIN, in_offs + add_offs, SEEK_SET);
 				to_read = in_size;
@@ -467,7 +459,7 @@ int main(int argc, char *argv[])
 					if (ferror(FIN)) {
 						(void)inflateEnd(&z);
 						printf("ERROR: reading file %s \n", input_file);
-						return 1;
+                        goto cleanup;
 					}
 					if (z.avail_in == 0)
 						break;
@@ -480,7 +472,6 @@ int main(int argc, char *argv[])
 						assert(err != Z_STREAM_ERROR);	/* state not clobbered */
 						switch (err) {
 						case Z_NEED_DICT:
-							err = Z_DATA_ERROR;	/* and fall through */
 						case Z_DATA_ERROR:
 						case Z_MEM_ERROR:
 							(void)inflateEnd(&z);
@@ -627,6 +618,7 @@ int main(int argc, char *argv[])
 	if (verbose)
 		printf("\nArchive successfully decompressed as %s\n", output_file);
 
+cleanup:
 	if (tmp != NULL)
 		free(tmp);
 	if (otmp != NULL)
@@ -656,6 +648,9 @@ int main(int argc, char *argv[])
 	if (verbose && extractpart > -1)
 		print_mountcmd(output_file);
 #endif
+
+    if (should_free_output_file)
+        free(output_file);
 
 	return 0;
 }
