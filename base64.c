@@ -62,16 +62,16 @@ unsigned char decode_base64_char(const char c)
 }
 
 void decode_base64(const char *inp, unsigned int isize,
-		        char *out, unsigned int *osize)
+		        char **out, unsigned int *osize)
 {
 	char *tinp = (char *)inp;
 	char *tout;
 	unsigned int i;
 
 	*osize = isize / 4 * 3;
-	if (inp != out) {
+	if (inp != *out) {
 		tout = (char *)malloc(*osize);
-		out = tout;
+		*out = tout;
 	} else {
 		tout = tinp;
 	}
